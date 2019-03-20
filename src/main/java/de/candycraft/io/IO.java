@@ -1,6 +1,7 @@
 package de.candycraft.io;
 
 import ch.qos.logback.classic.Level;
+import com.zaxxer.hikari.pool.HikariPool;
 import de.candycraft.io.command.Command;
 import de.candycraft.io.command.CommandManager;
 import de.candycraft.io.command.impl.DebugCommand;
@@ -22,6 +23,7 @@ import de.progme.thor.client.pub.Publisher;
 import de.progme.thor.client.pub.PublisherFactory;
 import de.progme.thor.client.sub.Subscriber;
 import de.progme.thor.client.sub.SubscriberFactory;
+import de.progme.thor.shared.net.ConnectException;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,18 +138,13 @@ public class IO {
                 .poolName("IO")
                 .build());
 
-        // let athena connect to the mysql
-        athena.connect();
+        // connect to Athena(MySQL)
+        connectAthena();
 
         logger.info("Athena(mysql) started");
 
-        // initialize thor
-        Header thorHeader = irisConfig.getHeader("thor");
-        Key thorHostKey = thorHeader.getKey("host");
-        publisher = PublisherFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt());
-        subscriber = SubscriberFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt(), "io");
-        pubSubCache = PubSubCacheFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt());
-        logger.info("Thor(pubsubcache) started");
+        // connect to Thor
+        connectThor();
 
         // initialize managers
         //playerManager = new PlayerManager();
@@ -220,6 +217,40 @@ public class IO {
         logger.debug("Thor connection closed");
 
         logger.info("IO has been stopped");
+    }
+
+    private void connectThor() {
+        try {
+
+            // initialize thor
+            Header thorHeader = irisConfig.getHeader("thor");
+            Key thorHostKey = thorHeader.getKey("host");
+            publisher = PublisherFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt());
+            subscriber = SubscriberFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt(), "io");
+            pubSubCache = PubSubCacheFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt());
+            logger.info("Connected to Thor(pubsubcache)");
+        } catch(ConnectException ex) {
+
+            logger.error("Error while connecting to Thor - trying again in 5s..");
+            try {
+                Thread.sleep(5000);
+            } catch(InterruptedException ignore) {}
+            connectThor();
+        }
+    }
+
+    private void connectAthena() {
+        try {
+            // let athena connect to the mysql
+            athena.connect();
+        } catch(HikariPool.PoolInitializationException ex) {
+
+            logger.error("Error while connecting Athena(MySQL) - trying again in 5s..");
+            try {
+                Thread.sleep(5000);
+            } catch(InterruptedException ignore) {}
+            connectAthena();
+        }
     }
 
     /**
