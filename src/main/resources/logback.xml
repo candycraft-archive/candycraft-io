@@ -23,7 +23,7 @@
         </triggeringPolicy>
     </appender>
 
-    <logger name="de.candycraft.io" level="DEBUG" additivity="false">
+    <logger name="de.candycraft.io" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </logger>

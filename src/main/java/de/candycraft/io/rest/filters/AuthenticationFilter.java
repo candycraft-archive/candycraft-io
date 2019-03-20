@@ -59,21 +59,21 @@ public class AuthenticationFilter implements RequestFilter {
 
     public void loadTokens() {
 
-        logger.info("Loading tokens...");
+        logger.debug("Loading tokens...");
 
         for(Key key : config.getHeader("tokens").getKeys())
 
             tokens.put(key.getName(), new Token(key.getName(), key.getValues()));
 
-        logger.info("Loaded tokens!");
+        logger.debug("Loaded tokens!");
 
-        logger.info("Tokens:");
+        logger.debug("Tokens:");
 
         this.tokens.values().forEach((Token token) -> {
 
-            logger.info(" - " + token.getToken());
+            logger.debug(" - " + token.getToken());
 
-            token.getResources().forEach((resource) -> logger.info("  - " + resource));
+            token.getResources().forEach((resource) -> logger.debug("  - " + resource));
         });
     }
 

@@ -8,8 +8,6 @@ import de.progme.hermes.server.http.annotation.Produces;
 import de.progme.hermes.server.http.annotation.method.GET;
 import de.progme.hermes.shared.ContentType;
 import de.progme.hermes.shared.http.Response;
-import de.candycraft.io.IO;
-import de.candycraft.io.rest.responses.IOResponse;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +27,7 @@ public class HelloWorldResource {
     @GET
     @Path("/world")
     @Produces(ContentType.APPLICATION_JSON)
-    public Response helloWorld(Request httpRequest, @PathParam String stringUniqueId, @PathParam String name) {
+    public Response helloWorld(Request httpRequest) {
 
         JSONObject message = new JSONObject();
         message.put("hello", "world");

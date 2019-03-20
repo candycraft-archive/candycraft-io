@@ -20,7 +20,7 @@ import java.nio.file.Files;
  */
 public class Main {
 
-    private static final String IO_PACKAGE_NAME = "de.candrycrush.io";
+    private static final String IO_PACKAGE_NAME = "de.candycraft.io";
 
     @Getter
     private static ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(IO_PACKAGE_NAME);
@@ -58,6 +58,7 @@ public class Main {
 
             IrisConfig irisConfig = Iris.from(config)
                     .def(new Header("general"), new Key("host"), new Value("0.0.0.0"), new Value("8080"))
+                    .def(new Header("general"), new Key("logger"), new Value("INFO"))
                     .def(new Header("mysql"), new Key("host"), new Value("0.0.0.0"), new Value("3306"))
                     .def(new Header("mysql"), new Key("authentication"), new Value("user"), new Value("password"))
                     .def(new Header("mysql"), new Key("database"), new Value("yourdatabase"))

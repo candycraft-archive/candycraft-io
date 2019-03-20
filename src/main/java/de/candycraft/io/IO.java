@@ -81,14 +81,13 @@ public class IO {
         // initialize the config
         this.irisConfig = irisConfig;
 
+        changeDebug(Level.toLevel(irisConfig.getHeader("general").getKey("logger").getValue(0).asString()));
+
         // initialize command manager
         this.commandManager = new CommandManager();
 
         // initialize rest api
         restServer = HermesServerFactory.create(new Config());
-
-        // change debug to info
-        changeDebug(Level.INFO);
     }
 
     private static class Config extends HermesConfig {
@@ -141,8 +140,6 @@ public class IO {
         // connect to Athena(MySQL)
         connectAthena();
 
-        logger.info("Athena(mysql) started");
-
         // connect to Thor
         connectThor();
 
@@ -152,7 +149,7 @@ public class IO {
         // start rest api
         restServer.start();
 
-        logger.info("Hermes(rest server) started");
+        logger.debug("Hermes(rest server) started");
 
         logger.info("IO started - took {}s to start", (System.currentTimeMillis() - startTimeMillis) / 1000);
     }
@@ -161,6 +158,8 @@ public class IO {
      * Initialize console
      */
     public void console() {
+
+        System.out.print(" > ");
 
         scanner = new Scanner(System.in);
 
@@ -189,6 +188,7 @@ public class IO {
                         logger.info("Command not found!");
                     }
                 }
+                System.out.print(" > ");
             }
         } catch (IllegalStateException ignore) {}
     }
@@ -200,6 +200,9 @@ public class IO {
     public void stop() {
 
         logger.info("IO is going to be stopped");
+
+        // Close the scanner
+        scanner.close();
 
         try {
             restServer.stop();
@@ -217,6 +220,9 @@ public class IO {
         logger.debug("Thor connection closed");
 
         logger.info("IO has been stopped");
+
+        // Explicitly exit
+        System.exit(0);
     }
 
     private void connectThor() {
@@ -228,7 +234,7 @@ public class IO {
             publisher = PublisherFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt());
             subscriber = SubscriberFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt(), "io");
             pubSubCache = PubSubCacheFactory.create(thorHostKey.getValue(0).asString(), thorHostKey.getValue(1).asInt());
-            logger.info("Connected to Thor(pubsubcache)");
+            logger.debug("Connected to Thor(pubsubcache)");
         } catch(ConnectException ex) {
 
             logger.error("Error while connecting to Thor - trying again in 5s..");
