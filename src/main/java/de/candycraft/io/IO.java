@@ -7,8 +7,9 @@ import de.candycraft.io.command.CommandManager;
 import de.candycraft.io.command.impl.DebugCommand;
 import de.candycraft.io.command.impl.EndCommand;
 import de.candycraft.io.command.impl.HelpCommand;
+import de.candycraft.io.manager.player.PlayerManager;
 import de.candycraft.io.rest.filters.AuthenticationFilter;
-import de.candycraft.io.rest.resources.HelloWorldResource;
+import de.candycraft.io.rest.resources.PlayerResource;
 import de.progme.athena.Athena;
 import de.progme.athena.db.settings.AthenaSettings;
 import de.progme.hermes.server.HermesServer;
@@ -60,8 +61,8 @@ public class IO {
     @Getter
     private PubSubCache pubSubCache;
 
-    /*@Getter
-    private PlayerManager playerManager;*/
+    @Getter
+    private PlayerManager playerManager;
 
     @Getter
     private HermesServer restServer;
@@ -106,7 +107,7 @@ public class IO {
             maxPoolSize(16);
 
             filter(AuthenticationFilter.class);
-            register(HelloWorldResource.class);
+            register(PlayerResource.class);
         }
     }
 
@@ -144,7 +145,8 @@ public class IO {
         connectThor();
 
         // initialize managers
-        //playerManager = new PlayerManager();
+        playerManager = new PlayerManager(athena, pubSubCache);
+        playerManager.createTables();
 
         // start rest api
         restServer.start();
