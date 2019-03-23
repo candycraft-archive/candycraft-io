@@ -8,6 +8,9 @@ import lombok.Getter;
 public class Economy extends IOModel {
 
     @Getter
+    private int id;
+
+    @Getter
     private String name;
 
     @Getter
