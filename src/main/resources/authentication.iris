@@ -1,7 +1,0 @@
-# Authentication config
-# Enter tokens below in the given schema:
-# test-token player/getuuid player/getname
-
-tokens:
-    test-token *
-    test-token2 *
