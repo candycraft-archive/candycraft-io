@@ -10,7 +10,7 @@ import lombok.Getter;
  *
  * @author pauhull
  */
-@Builder
+@Builder(builderClassName = "Builder")
 public class ClanGroup extends IOModel {
 
     @Getter
