@@ -8,7 +8,7 @@ import org.json.JSONObject;
 /**
  * Created by Marvin Erkes on 2019-03-21.
  */
-public class IOObject {
+public class IOModel {
 
     private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -22,12 +22,12 @@ public class IOObject {
         return gson.toJson(this);
     }
 
-    public static IOObject fromJSON(JSONObject json, Class<? extends IOObject> clazz) {
+    public static IOModel fromJSON(JSONObject json, Class<? extends IOModel> clazz) {
 
         return gson.fromJson(json.toString(), clazz);
     }
 
-    public static IOObject fromDBRow(DBRow dbRow, Class<? extends IOObject> clazz) {
+    public static IOModel fromDBRow(DBRow dbRow, Class<? extends IOModel> clazz) {
 
         JSONObject json = new JSONObject();
         dbRow.entries().forEach((entry) -> json.put(entry.getKey(), entry.getValue()));
