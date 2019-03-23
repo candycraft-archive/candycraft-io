@@ -1,6 +1,6 @@
 package de.candycraft.io.server.models.player;
 
-import de.candycraft.io.server.models.IOObject;
+import de.candycraft.io.server.models.IOModel;
 import lombok.Getter;
 
 import java.util.UUID;
@@ -8,7 +8,7 @@ import java.util.UUID;
 /**
  * Created by Marvin Erkes on 2019-03-21.
  */
-public class Player extends IOObject {
+public class Player extends IOModel {
 
     @Getter
     private int id;
