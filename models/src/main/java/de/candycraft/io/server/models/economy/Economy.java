@@ -15,6 +15,4 @@ public class Economy extends IOModel {
 
     @Getter
     private String characters;
-
-
 }

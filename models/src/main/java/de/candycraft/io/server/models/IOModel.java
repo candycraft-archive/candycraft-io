@@ -2,6 +2,7 @@ package de.candycraft.io.server.models;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.candycraft.io.server.models.player.Player;
 import de.progme.athena.db.DBRow;
 import org.json.JSONObject;
 
