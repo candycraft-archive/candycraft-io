@@ -1,5 +1,6 @@
 package de.candycraft.io.server.models.stats;
 
+import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 import org.json.JSONObject;
@@ -11,7 +12,7 @@ import org.json.JSONObject;
  * @author pauhull
  */
 @Builder(builderClassName = "Builder")
-public class Stats {
+public class Stats extends IOModel {
 
     @Getter
     private JSONObject stats;
