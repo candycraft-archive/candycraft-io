@@ -1,8 +1,10 @@
 package de.candycraft.io.rest.resources;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import de.candycraft.io.IO;
 import de.candycraft.io.manager.player.Player;
+import de.candycraft.io.rest.responses.IOResponse;
 import de.progme.athena.db.serialization.Condition;
 import de.progme.hermes.server.http.Request;
 import de.progme.hermes.server.http.annotation.Path;
@@ -10,13 +12,12 @@ import de.progme.hermes.server.http.annotation.PathParam;
 import de.progme.hermes.server.http.annotation.Produces;
 import de.progme.hermes.server.http.annotation.method.GET;
 import de.progme.hermes.server.http.annotation.method.POST;
+import de.progme.hermes.server.http.annotation.method.PUT;
 import de.progme.hermes.shared.ContentType;
 import de.progme.hermes.shared.http.Response;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
  * Created by marvinerkes on 26.01.17 with IntelliJ IDEA.
@@ -24,30 +25,40 @@ import java.util.List;
 @Path("/player")
 public class PlayerResource {
 
-    private static Logger logger = LoggerFactory.getLogger(PlayerResource.class);
-
-    private static Gson gson = new Gson();
-
     @POST
     @Path("/create")
     @Produces(ContentType.APPLICATION_JSON)
     public Response createPlayer(Request httpRequest) {
 
         Player player = (Player)Player.fromJSON(new JSONObject(httpRequest.body()), Player.class);
-        IO.getInstance().getPlayerManager().insertPlayer(player);
+        IOResponse response = IO.getInstance().getPlayerManager().insertPlayer(player);
 
-        return Response.ok().content("{}").build();
+        return Response.ok().content(response.toJSONString()).build();
     }
 
     @GET
-    @Path("/{key}/{value}")
+    @Path("/{key}/{value}/{limit}")
     @Produces(ContentType.APPLICATION_JSON)
-    public Response getPlayer(Request httpRequest, @PathParam String key, @PathParam String value) {
+    public Response getPlayer(Request httpRequest, @PathParam String key, @PathParam String value, @PathParam String sLimit) {
 
-        Player player = IO.getInstance().getPlayerManager().getPlayer(new Condition(key, Condition.Operator.EQUAL, value));
+        Condition condition = new Condition(key, Condition.Operator.EQUAL, value);
+        int limit = sLimit != null ? Integer.parseInt(sLimit) : 0;
 
-        String jsonString = player != null ? player.toJSONString() : "{}";
+        IOResponse response;
+        if(limit == 0) response = IO.getInstance().getPlayerManager().getPlayer(condition);
+        else response = IO.getInstance().getPlayerManager().getPlayers(condition, limit);
 
-        return Response.ok().content(jsonString).build();
+        return Response.ok().content(response.toJSONString()).build();
+    }
+
+    @PUT
+    @Path("/update/{uuid}")
+    @Produces(ContentType.APPLICATION_JSON)
+    public Response updatePlayer(Request httpRequest, @PathParam String uuid) {
+
+        Condition condition = new Condition("uuid", Condition.Operator.EQUAL, uuid);
+        IOResponse response = IO.getInstance().getPlayerManager().updatePlayer(condition, new JSONObject(httpRequest.body()));
+
+        return Response.ok().content(response.toJSONString()).build();
     }
 }

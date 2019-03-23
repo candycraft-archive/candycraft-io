@@ -2,9 +2,10 @@ general:
     host 0.0.0.0 8080
     logger INFO
 mysql:
-    host 0.0.0.0 3306
-    authentication root password
-    database yourdatabase
+    host 127.0.0.1 3306
+    authentication root Br00klyn
+    database candycraft
     poolsize 10
 thor:
-    host 0.0.0.0 1337
+    host 127.0.0.1 1337
+    expire 15

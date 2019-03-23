@@ -64,6 +64,7 @@ public class Main {
                     .def(new Header("mysql"), new Key("database"), new Value("yourdatabase"))
                     .def(new Header("mysql"), new Key("poolsize"), new Value("10"))
                     .def(new Header("thor"), new Key("host"), new Value("0.0.0.0"), new Value("1337"))
+                    .def(new Header("thor"), new Key("expire"), new Value("15"))
                     .build();
 
             logger.info("Config loaded");

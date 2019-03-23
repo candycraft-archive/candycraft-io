@@ -145,7 +145,7 @@ public class IO {
         connectThor();
 
         // initialize managers
-        playerManager = new PlayerManager(athena, pubSubCache);
+        playerManager = new PlayerManager(athena, pubSubCache, irisConfig.getHeader("thor").getKey("expire").getValue(0).asInt());
         playerManager.createTables();
 
         // start rest api
