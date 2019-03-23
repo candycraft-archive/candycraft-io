@@ -1,5 +1,6 @@
 package de.candycraft.io.server.models.chatlog;
 
+import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,7 +13,7 @@ import java.util.List;
  * @author pauhull
  */
 @Builder(builderClassName = "Builder")
-public class Chatlog {
+public class Chatlog extends IOModel {
 
     @Getter
     private int id;

@@ -1,12 +1,13 @@
 package de.candycraft.io.server.models.entitlement;
 
+import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
 
 @Builder(builderClassName = "Builder")
-public class Group {
+public class Group extends IOModel {
 
     @Getter
     private int id;

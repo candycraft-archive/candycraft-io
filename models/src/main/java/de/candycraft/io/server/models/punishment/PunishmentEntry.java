@@ -1,5 +1,6 @@
 package de.candycraft.io.server.models.punishment;
 
+import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,7 +14,7 @@ import java.util.UUID;
  * @author pauhull
  */
 @Builder(builderClassName = "Builder")
-public class PunishmentEntry {
+public class PunishmentEntry extends IOModel {
 
     @Getter
     private int id;

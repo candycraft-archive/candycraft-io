@@ -1,5 +1,6 @@
 package de.candycraft.io.server.models.punishment;
 
+import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,7 +11,7 @@ import lombok.Getter;
  * @author pauhull
  */
 @Builder(builderClassName = "Builder")
-public class Punishment {
+public class Punishment extends IOModel {
 
     @Getter
     private int id;
