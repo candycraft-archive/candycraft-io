@@ -1,10 +1,9 @@
 package de.candycraft.io.server.models.chatlog;
 
-import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.UUID;
+import java.util.List;
 
 /**
  * Created by Paul
@@ -13,17 +12,15 @@ import java.util.UUID;
  * @author pauhull
  */
 @Builder(builderClassName = "Builder")
-public class ChatlogEntry extends IOModel {
+public class Chatlog {
 
     @Getter
     private int id;
     @Getter
-    private UUID uuid;
+    private List<ChatlogEntry> entries;
     @Getter
-    private String name;
+    private long createdOn;
     @Getter
-    private long time;
-    @Getter
-    private String message;
+    private String chatlogId;
 
 }
