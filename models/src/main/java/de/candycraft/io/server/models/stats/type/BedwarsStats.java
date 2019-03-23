@@ -4,8 +4,6 @@ import de.candycraft.io.server.models.stats.Stats;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.UUID;
-
 /**
  * Created by Paul
  * on 23.03.2019
@@ -18,7 +16,7 @@ public class BedwarsStats extends Stats {
     @Getter
     private int id;
     @Getter
-    private UUID uuid;
+    private int player;
     @Getter
     private int wins;
     @Getter

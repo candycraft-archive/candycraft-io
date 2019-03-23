@@ -18,10 +18,13 @@ public class Chatlog extends IOModel {
     @Getter
     private int id;
     @Getter
+    private String identifier;
+    @Getter
+    private int reporter;
+    @Getter
+    private int serverType;
+    @Getter
     private List<ChatlogEntry> entries;
     @Getter
-    private long createdOn;
-    @Getter
-    private String chatlogId;
-
+    private long createdAt;
 }

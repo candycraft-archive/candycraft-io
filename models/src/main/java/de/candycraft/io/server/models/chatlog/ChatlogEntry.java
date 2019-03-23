@@ -4,8 +4,6 @@ import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.UUID;
-
 /**
  * Created by Paul
  * on 23.03.2019
@@ -18,12 +16,11 @@ public class ChatlogEntry extends IOModel {
     @Getter
     private int id;
     @Getter
-    private UUID uuid;
+    private int player;
     @Getter
     private String name;
     @Getter
-    private long time;
-    @Getter
     private String message;
-
+    @Getter
+    private long time;
 }

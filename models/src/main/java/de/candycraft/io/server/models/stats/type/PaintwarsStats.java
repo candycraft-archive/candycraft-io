@@ -18,7 +18,7 @@ public class PaintwarsStats extends Stats {
     @Getter
     private int id;
     @Getter
-    private UUID uuid;
+    private int player;
     @Getter
     private int wins;
     @Getter

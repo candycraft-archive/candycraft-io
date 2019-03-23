@@ -19,13 +19,13 @@ public class PunishmentEntry extends IOModel {
     @Getter
     private int id;
     @Getter
-    private UUID uuid;
+    private int player;
     @Getter
     private Punishment punishment;
     @Getter
     private long issuedOn;
     @Getter
-    private UUID issuedBy;
+    private int issuedBy;
     @Getter
     private InetAddress address;
 

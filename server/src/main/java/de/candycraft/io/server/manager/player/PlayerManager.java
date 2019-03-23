@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class PlayerManager extends Manager {
 
-    private static String TABLE = "io_players";
+    private static String TABLE = "io_player";
     private static String CACHE_PREFIX = "io_cache_player_";
 
     private Athena athena;
