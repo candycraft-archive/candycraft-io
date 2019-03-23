@@ -7,8 +7,10 @@ import de.candycraft.io.server.command.CommandManager;
 import de.candycraft.io.server.command.impl.DebugCommand;
 import de.candycraft.io.server.command.impl.EndCommand;
 import de.candycraft.io.server.command.impl.HelpCommand;
+import de.candycraft.io.server.manager.chatlog.ChatlogManager;
 import de.candycraft.io.server.manager.player.PlayerManager;
 import de.candycraft.io.server.rest.filters.AuthenticationFilter;
+import de.candycraft.io.server.rest.resources.ChatlogResource;
 import de.candycraft.io.server.rest.resources.PlayerResource;
 import de.progme.athena.Athena;
 import de.progme.athena.db.settings.AthenaSettings;
@@ -63,6 +65,8 @@ public class IO {
 
     @Getter
     private PlayerManager playerManager;
+    @Getter
+    private ChatlogManager chatlogManager;
 
     @Getter
     private HermesServer restServer;
@@ -108,6 +112,7 @@ public class IO {
 
             filter(AuthenticationFilter.class);
             register(PlayerResource.class);
+            register(ChatlogResource.class);
         }
     }
 
@@ -145,8 +150,11 @@ public class IO {
         connectThor();
 
         // initialize managers
-        playerManager = new PlayerManager(athena, pubSubCache, irisConfig.getHeader("thor").getKey("expire").getValue(0).asInt());
+        int expire = irisConfig.getHeader("thor").getKey("expire").getValue(0).asInt();
+        playerManager = new PlayerManager(athena, pubSubCache, expire);
         playerManager.createTables();
+        chatlogManager = new ChatlogManager(athena, pubSubCache, expire);
+        chatlogManager.createTables();
 
         // start rest api
         restServer.start();

@@ -11,7 +11,6 @@ import org.json.JSONObject;
  *
  * @author pauhull
  */
-@Builder(builderClassName = "Builder")
 public class Stats extends IOModel {
 
     @Getter

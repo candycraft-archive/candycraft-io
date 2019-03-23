@@ -1,7 +1,7 @@
 package de.candycraft.io.server.rest.resources;
 
 import de.candycraft.io.server.IO;
-import de.candycraft.io.server.models.player.Player;
+import de.candycraft.io.server.models.chatlog.Chatlog;
 import de.candycraft.io.server.rest.responses.IOResponse;
 import de.progme.athena.db.serialization.Condition;
 import de.progme.hermes.server.http.Request;
@@ -16,18 +16,18 @@ import de.progme.hermes.shared.http.Response;
 import org.json.JSONObject;
 
 /**
- * Created by marvinerkes on 20.03.19 with IntelliJ IDEA.
+ * Created by marvinerkes on 23.03.19 with IntelliJ IDEA.
  */
-@Path("/player")
-public class PlayerResource {
+@Path("/chatlog")
+public class ChatlogResource {
 
     @POST
     @Path("/create")
     @Produces(ContentType.APPLICATION_JSON)
-    public Response createPlayer(Request httpRequest) {
+    public Response createChatlog(Request httpRequest) {
 
-        Player player = (Player)Player.fromJSON(new JSONObject(httpRequest.body()), Player.class);
-        IOResponse response = IO.getInstance().getPlayerManager().insertPlayer(player);
+        Chatlog chatlog = (Chatlog) Chatlog.fromJSON(new JSONObject(httpRequest.body()), Chatlog.class);
+        IOResponse response = IO.getInstance().getChatlogManager().insertChatlog(chatlog);
 
         return Response.ok().content(response.toJSONString()).build();
     }
@@ -35,25 +35,14 @@ public class PlayerResource {
     @GET
     @Path("/{key}/{value}/{limit}")
     @Produces(ContentType.APPLICATION_JSON)
-    public Response getPlayer(Request httpRequest, @PathParam String key, @PathParam String value, @PathParam String sLimit) {
+    public Response getChatlog(Request httpRequest, @PathParam String key, @PathParam String value, @PathParam String sLimit) {
 
         Condition condition = new Condition(key, Condition.Operator.EQUAL, value);
         int limit = sLimit != null ? Integer.parseInt(sLimit) : 0;
 
         IOResponse response;
-        if(limit == 0) response = IO.getInstance().getPlayerManager().getPlayer(condition);
-        else response = IO.getInstance().getPlayerManager().getPlayers(condition, limit);
-
-        return Response.ok().content(response.toJSONString()).build();
-    }
-
-    @PUT
-    @Path("/update/{uuid}")
-    @Produces(ContentType.APPLICATION_JSON)
-    public Response updatePlayer(Request httpRequest, @PathParam String uuid) {
-
-        Condition condition = new Condition("uuid", Condition.Operator.EQUAL, uuid);
-        IOResponse response = IO.getInstance().getPlayerManager().updatePlayer(condition, new JSONObject(httpRequest.body()));
+        if(limit == 0) response = IO.getInstance().getChatlogManager().getChatlog(condition);
+        else response = IO.getInstance().getChatlogManager().getChatlogs(condition, limit);
 
         return Response.ok().content(response.toJSONString()).build();
     }

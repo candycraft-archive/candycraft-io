@@ -1,7 +1,8 @@
 package de.candycraft.io.server.manager.chatlog;
 
 import de.candycraft.io.server.manager.Manager;
-import de.candycraft.io.server.models.player.Player;
+import de.candycraft.io.server.models.chatlog.Chatlog;
+import de.candycraft.io.server.models.chatlog.ChatlogEntry;
 import de.candycraft.io.server.rest.responses.IOResponse;
 import de.progme.athena.Athena;
 import de.progme.athena.db.DBResult;
@@ -9,7 +10,6 @@ import de.progme.athena.db.serialization.Condition;
 import de.progme.athena.query.core.CreateQuery;
 import de.progme.athena.query.core.InsertQuery;
 import de.progme.athena.query.core.SelectQuery;
-import de.progme.athena.query.core.UpdateQuery;
 import de.progme.thor.client.cache.PubSubCache;
 import org.json.JSONObject;
 
@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ChatlogManager extends Manager {
 
-    private static String TABLE_LOGS = "io_chatlog";
-    private static String TABLE_REPORTS = "io_chatlog";
+    private static String TABLE = "io_chatlog";
+    private static String TABLE_ENTRIES = "io_chatlog_entries";
     private static String CACHE_PREFIX = "io_cache_chatlog_";
 
     private Athena athena;
@@ -44,16 +44,7 @@ public class ChatlogManager extends Manager {
     public void createTables() {
 
         athena.execute(new CreateQuery.Builder()
-                .create(TABLE_LOGS)
-                .primaryKey("id")
-                .value("id", "int", "auto_increment")
-                .value("player", "int")
-                .value("name", "varchar(255)")
-                .value("message", "varchar(255)")
-                .value("time", "timestamp")
-                .build());
-        athena.execute(new CreateQuery.Builder()
-                .create(TABLE_REPORTS)
+                .create(TABLE)
                 .primaryKey("id")
                 .value("id", "int", "auto_increment")
                 .value("identifier", "varchar(255)")
@@ -61,23 +52,56 @@ public class ChatlogManager extends Manager {
                 .value("serverType", "int")
                 .value("createdAt", "int")
                 .build());
+        athena.execute(new CreateQuery.Builder()
+                .create(TABLE_ENTRIES)
+                .primaryKey("id")
+                .value("id", "int", "auto_increment")
+                .value("chatlogId", "int")
+                .value("player", "int")
+                .value("name", "varchar(255)")
+                .value("message", "varchar(255)")
+                .value("time", "timestamp")
+                .build());
     }
 
-    public IOResponse insertPlayer(Player player) {
+    public IOResponse insertChatlog(Chatlog chatlog) {
 
-        JSONObject playerJSON = player.toJSON();
+        JSONObject chatlogJSON = chatlog.toJSON();
 
         InsertQuery.Builder builder = new InsertQuery.Builder()
-                .into("io_players");
-
-        playerJSON.keySet().forEach(key -> {
+                .into(TABLE);
+        chatlogJSON.keySet().forEach(key -> {
+            if (key.equals("entries")) return;
             builder.column(key);
-            builder.value(playerJSON.get(key).toString());
+            builder.value(chatlogJSON.get(key).toString());
         });
         this.athena.execute(builder.build());
 
-        this.cache.put(CACHE_PREFIX + player.getUuid(), playerJSON, expire);
-        this.cache.put(CACHE_PREFIX + player.getName(), playerJSON, expire);
+        DBResult result = athena.query(new SelectQuery.Builder()
+                .select("*")
+                .from(TABLE)
+                .where(new Condition("identifier", Condition.Operator.EQUAL, String.valueOf(chatlog.getIdentifier())))
+                .limit(1)
+                .build());
+        int id = result.row(0).get("id");
+
+        chatlog.getEntries().forEach(entry -> { // TODO: Double unobjection
+
+            entry.setChatlogId(id);
+
+            JSONObject entryJSON = entry.toJSON();
+
+            InsertQuery.Builder insertBuilder = new InsertQuery.Builder()
+                    .into(TABLE_ENTRIES);
+            entryJSON.keySet().forEach(key -> {
+                insertBuilder.column(key);
+                insertBuilder.value(entryJSON.get(key).toString());
+            });
+            this.athena.execute(insertBuilder.build());
+        });
+
+        this.cache.put(CACHE_PREFIX + chatlog.getId(), chatlogJSON, expire);
+        this.cache.put(CACHE_PREFIX + chatlog.getIdentifier(), chatlogJSON, expire);
 
         return new IOResponse.Builder()
                 .status(IOResponse.Status.OK)
@@ -86,104 +110,98 @@ public class ChatlogManager extends Manager {
                 .build();
     }
 
-    public IOResponse updatePlayer(Condition condition, JSONObject updates) {
-
-        if(condition.column().equals("uuid") || condition.column().equals("name")) {
-            this.cache.get(CACHE_PREFIX + condition.value(), (player) -> {
-                if(player == null) return;
-                this.cache.remove(CACHE_PREFIX + player.getString("uuid"));
-                this.cache.remove(CACHE_PREFIX + player.getString("name"));
-            });
-        } else {
-            List<Player> players = (List<Player>) this.getPlayers(condition, -1).getMessage();
-            players.forEach(player -> {
-                this.cache.remove(CACHE_PREFIX + player.getUuid());
-                this.cache.remove(CACHE_PREFIX + player.getName());
-            });
-        }
-
-        UpdateQuery.Builder builder = new UpdateQuery.Builder()
-                .update(TABLE)
-                .where(condition);
-
-        updates.keySet().forEach(key -> builder.set(key, updates.get(key).toString()));
-
-        this.athena.execute(builder.build());
-
-        return new IOResponse.Builder()
-                .status(IOResponse.Status.OK)
-                .source(IOResponse.Source.MYSQL)
-                .time(0)
-                .build();
-    }
-
-    public IOResponse getPlayer(Condition condition) {
+    public IOResponse getChatlog(Condition condition) {
 
         IOResponse.Builder builder = new IOResponse.Builder()
                 .status(IOResponse.Status.OK)
                 .time(0);
 
-        AtomicReference<Player> player = new AtomicReference<>();
+        AtomicReference<Chatlog> chatlog = new AtomicReference<>();
 
-        if (condition.column().equals("uuid") || condition.column().equals("name")) {
-            CountDownLatch countDownLatch = new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
 
-            this.cache.get(CACHE_PREFIX + condition.value(), (cachedPlayer) -> {
-                if(cachedPlayer != null) {
-                    player.set((Player)Player.fromJSON(cachedPlayer, Player.class));
-                    builder.source(IOResponse.Source.CACHE);
-                }
-                countDownLatch.countDown();
-            });
-
-            try {
-                countDownLatch.await(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignore) {
+        this.cache.get(CACHE_PREFIX + condition.value(), (cachedChatlog) -> {
+            if (cachedChatlog != null) {
+                chatlog.set((Chatlog) Chatlog.fromJSON(cachedChatlog, Chatlog.class));
+                builder.source(IOResponse.Source.CACHE);
             }
+            countDownLatch.countDown();
+        });
+
+        try {
+            countDownLatch.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignore) {
         }
 
-        if (player.get() == null) {
-            DBResult matchedPlayers = athena.query(new SelectQuery.Builder()
+        if (chatlog.get() == null) {
+            DBResult matchedChatlogs = athena.query(new SelectQuery.Builder()
                     .select("*")
                     .from(TABLE)
                     .where(condition)
                     .build());
 
-            if(matchedPlayers.size() != 0) player.set((Player) Player.fromDBRow(matchedPlayers.row(0), Player.class));
+            if (matchedChatlogs.size() != 0) {
+                chatlog.set((Chatlog) Chatlog.fromDBRow(matchedChatlogs.row(0), Chatlog.class));
+
+                chatlog.get().setEntries(new ArrayList<>());
+
+                DBResult matchedEntries = athena.query(new SelectQuery.Builder()
+                        .select("*")
+                        .from(TABLE_ENTRIES)
+                        .where(new Condition("chatlogId", Condition.Operator.EQUAL, String.valueOf(chatlog.get().getId())))
+                        .limit(1)
+                        .build());
+
+                matchedEntries.rows().forEach(dbRow -> chatlog.get().getEntries().add((ChatlogEntry) ChatlogEntry.fromDBRow(dbRow, ChatlogEntry.class)));
+            }
 
             builder.source(IOResponse.Source.MYSQL);
         }
 
-        if (player.get() != null) {
-            this.cache.put(CACHE_PREFIX + player.get().getUuid(), player.get().toJSON(), expire);
-            this.cache.put(CACHE_PREFIX + player.get().getName(), player.get().toJSON(), expire);
+        if (chatlog.get() != null) {
+            this.cache.put(CACHE_PREFIX + chatlog.get().getId(), chatlog.get().toJSON(), expire);
+            this.cache.put(CACHE_PREFIX + chatlog.get().getIdentifier(), chatlog.get().toJSON(), expire);
         }
 
         return builder
-                .message(player.get())
+                .message(chatlog.get())
                 .build();
     }
 
-    public IOResponse getPlayers(Condition condition, int limit) {
+    public IOResponse getChatlogs(Condition condition, int limit) {
 
         //TODO: Possible to cache?
-
-        List<Player> players = new ArrayList<>();
+        List<Chatlog> chatlogs = new ArrayList<>();
 
         SelectQuery.Builder builder = new SelectQuery.Builder()
                 .select("*")
                 .from(TABLE)
                 .where(condition);
 
-        if(limit != -1) builder.limit(limit);
+        if (limit != -1) builder.limit(limit);
 
-        DBResult matchedPlayers = athena.query(builder.build());
+        DBResult matchedChatlogs = athena.query(builder.build());
 
-        matchedPlayers.rows().forEach(dbRow -> players.add((Player) Player.fromDBRow(dbRow, Player.class)));
+        matchedChatlogs.rows().forEach(dbChatlog -> {
+
+            Chatlog chatlog = (Chatlog) Chatlog.fromDBRow(dbChatlog, Chatlog.class);
+
+            chatlog.setEntries(new ArrayList<>());
+
+            DBResult matchedEntries = athena.query(new SelectQuery.Builder()
+                    .select("*")
+                    .from(TABLE_ENTRIES)
+                    .where(new Condition("chatlogId", Condition.Operator.EQUAL, String.valueOf(chatlog.getId())))
+                    .limit(1)
+                    .build());
+
+            matchedEntries.rows().forEach(dbEntry -> chatlog.getEntries().add((ChatlogEntry) ChatlogEntry.fromDBRow(dbEntry, ChatlogEntry.class)));
+            chatlogs.add(chatlog);
+        });
 
         return new IOResponse.Builder()
                 .status(IOResponse.Status.OK)
-                .message(players)
+                .message(chatlogs)
                 .source(IOResponse.Source.MYSQL)
                 .time(0)
                 .build();

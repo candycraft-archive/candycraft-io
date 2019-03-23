@@ -3,6 +3,7 @@ package de.candycraft.io.server.models.chatlog;
 import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Created by Paul
@@ -15,6 +16,9 @@ public class ChatlogEntry extends IOModel {
 
     @Getter
     private int id;
+    @Getter
+    @Setter
+    private int chatlogId;
     @Getter
     private int player;
     @Getter

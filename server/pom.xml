@@ -117,7 +117,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>Main</mainClass>
+                            <mainClass>de.candycraft.io.server.Main</mainClass>
 
                             <addDefaultImplementationEntries>
                                 true

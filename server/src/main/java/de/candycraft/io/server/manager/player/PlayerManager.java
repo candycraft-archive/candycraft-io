@@ -58,7 +58,7 @@ public class PlayerManager extends Manager {
         JSONObject playerJSON = player.toJSON();
 
         InsertQuery.Builder builder = new InsertQuery.Builder()
-                .into("io_players");
+                .into(TABLE);
 
         playerJSON.keySet().forEach(key -> {
             builder.column(key);
@@ -137,6 +137,7 @@ public class PlayerManager extends Manager {
                     .select("*")
                     .from(TABLE)
                     .where(condition)
+                    .limit(1)
                     .build());
 
             if(matchedPlayers.size() != 0) player.set((Player) Player.fromDBRow(matchedPlayers.row(0), Player.class));
