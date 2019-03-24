@@ -16,15 +16,19 @@ public class IOResponse {
 
     @Getter
     @Setter
-    private Status status;
+    private String status;
 
     @Getter
     @Setter
-    Source source;
+    private int statusCode;
 
     @Getter
     @Setter
-    double time;
+    private Source source;
+
+    @Getter
+    @Setter
+    private double time;
 
     @Getter
     @Setter
@@ -70,7 +74,8 @@ public class IOResponse {
      */
     public static class Builder {
 
-        private Status status;
+        private String status;
+        private int statusCode;
         private Object message;
         private Source source;
         private double time;
@@ -83,7 +88,33 @@ public class IOResponse {
          */
         public IOResponse.Builder status(Status status) {
 
-            this.status = status;
+            this.status = status.toString();
+
+            return this;
+        }
+
+        /**
+         * Sets the status.
+         *
+         * @param status the status.
+         * @return the builder.
+         */
+        public IOResponse.Builder status(String status) {
+
+            this.status = status.toUpperCase();
+
+            return this;
+        }
+
+        /**
+         * Sets the status code.
+         *
+         * @param statusCode the status code.
+         * @return the builder.
+         */
+        public IOResponse.Builder statusCode(int statusCode) {
+
+            this.statusCode = statusCode;
 
             return this;
         }
