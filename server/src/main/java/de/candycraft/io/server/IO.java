@@ -137,7 +137,9 @@ public class IO {
                 .host(mysqlHostKey.getValue(0).asString())
                 .port(mysqlHostKey.getValue(1).asInt())
                 .user(mysqlAuthenticationKey.getValue(0).asString())
-                .password(mysqlAuthenticationKey.getValue(1).asString())
+                .password(mysqlAuthenticationKey.getValues().size() > 1
+                        ? mysqlAuthenticationKey.getValue(1).asString()
+                        : "")
                 .database(mysqlDatabaseKey.getValue(0).asString())
                 .poolSize(mysqlPoolsizeKey.getValue(0).asInt())
                 .poolName("IO")
