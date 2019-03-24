@@ -1,6 +1,5 @@
 package de.candycraft.io.server.manager.friends;
 
-import de.candycraft.io.server.IO;
 import de.candycraft.io.server.manager.Manager;
 import de.candycraft.io.server.models.friends.Friendship;
 import de.candycraft.io.server.rest.responses.IOResponse;
@@ -12,7 +11,6 @@ import de.progme.athena.query.core.CreateQuery;
 import de.progme.athena.query.core.InsertQuery;
 import de.progme.athena.query.core.SelectQuery;
 import de.progme.thor.client.cache.PubSubCache;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,25 +77,20 @@ public class FriendManager extends Manager {
 
     public IOResponse requestFriendship(UUID from, UUID to) {
 
-        JSONObject fromPlayer = IO.getInstance().getPlayerManager().getPlayer(from).toJSON();
-        JSONObject toPlayer = IO.getInstance().getPlayerManager().getPlayer(to).toJSON();
-
         String sql = "SELECT * FROM " + TABLE + " WHERE (`from`='" + from + "' AND `to`='" + to + "') OR (`from`='" + to + "' AND `to`='" + from + "')";
         DBResult result = athena.query(sql);
 
         if (result.size() > 0) {
 
             DBRow row = result.row(0);
-            JSONObject friendshipObject = Friendship.fromDBRow(row, Friendship.class).toJSON();
-            friendshipObject.put("toPlayer", toPlayer);
-            friendshipObject.put("fromPlayer", fromPlayer);
+            Friendship friendship = Friendship.fromDBRow(row, Friendship.class);
 
             if (row.get("accepted")) {
 
                 return new IOResponse.Builder()
                         .status("FRIEND_ALREADY_ADDED")
                         .source(IOResponse.Source.MYSQL)
-                        .message(friendshipObject)
+                        .message(friendship)
                         .build();
 
             } else {
@@ -112,7 +105,7 @@ public class FriendManager extends Manager {
                     return new IOResponse.Builder()
                             .status("REQUEST_ALREADY_SENT")
                             .source(IOResponse.Source.MYSQL)
-                            .message(friendshipObject)
+                            .message(friendship)
                             .build();
                 }
             }
@@ -130,21 +123,16 @@ public class FriendManager extends Manager {
         athena.execute(query);
 
         result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + from + "' AND `to`='" + to + "'");
-        JSONObject friendshipObject = Friendship.fromDBRow(result.row(0), Friendship.class).toJSON();
-        friendshipObject.put("toPlayer", toPlayer);
-        friendshipObject.put("fromPlayer", fromPlayer);
+        Friendship friendship = Friendship.fromDBRow(result.row(0), Friendship.class);
 
         return new IOResponse.Builder()
                 .source(IOResponse.Source.MYSQL)
                 .status("REQUEST_SENT_SUCCESSFULLY")
-                .message(friendshipObject)
+                .message(friendship)
                 .build();
     }
 
     public IOResponse acceptRequest(UUID from, UUID to) {
-
-        JSONObject toPlayer = IO.getInstance().getPlayerManager().getPlayer(to).toJSON();
-        JSONObject fromPlayer = IO.getInstance().getPlayerManager().getPlayer(from).toJSON();
 
         DBResult result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + from + "' AND `to`='" + to + "'");
 
@@ -157,16 +145,15 @@ public class FriendManager extends Manager {
         }
 
         DBRow row = result.row(0);
-        JSONObject friendshipObject = Friendship.fromDBRow(row, Friendship.class).toJSON();
-        friendshipObject.put("toPlayer", toPlayer);
-        friendshipObject.put("fromPlayer", fromPlayer);
+
+        Friendship friendship = Friendship.fromDBRow(row, Friendship.class);
 
         if (row.get("accepted")) { // request already accepted
 
             return new IOResponse.Builder()
                     .status("REQUEST_ALREADY_ACCEPTED")
                     .source(IOResponse.Source.MYSQL)
-                    .message(friendshipObject)
+                    .message(friendship)
                     .build();
         }
 
@@ -175,7 +162,7 @@ public class FriendManager extends Manager {
         return new IOResponse.Builder()
                 .status("REQUEST_SUCCESSFULLY_ACCEPTED")
                 .source(IOResponse.Source.MYSQL)
-                .message(friendshipObject)
+                .message(friendship)
                 .build();
     }
 
