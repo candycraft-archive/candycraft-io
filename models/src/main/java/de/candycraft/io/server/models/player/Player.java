@@ -22,4 +22,9 @@ public class Player extends IOModel {
     private int server;
     @Getter
     private long onlineTime;
+
+    @Override
+    public String toString() {
+        return uuid.toString();
+    }
 }

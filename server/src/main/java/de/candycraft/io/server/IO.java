@@ -8,9 +8,13 @@ import de.candycraft.io.server.command.impl.DebugCommand;
 import de.candycraft.io.server.command.impl.EndCommand;
 import de.candycraft.io.server.command.impl.HelpCommand;
 import de.candycraft.io.server.manager.chatlog.ChatlogManager;
+import de.candycraft.io.server.manager.clan.ClanManager;
+import de.candycraft.io.server.manager.friends.FriendManager;
 import de.candycraft.io.server.manager.player.PlayerManager;
 import de.candycraft.io.server.rest.filters.AuthenticationFilter;
 import de.candycraft.io.server.rest.resources.ChatlogResource;
+import de.candycraft.io.server.rest.resources.ClanResource;
+import de.candycraft.io.server.rest.resources.FriendResource;
 import de.candycraft.io.server.rest.resources.PlayerResource;
 import de.progme.athena.Athena;
 import de.progme.athena.db.settings.AthenaSettings;
@@ -67,6 +71,10 @@ public class IO {
     private PlayerManager playerManager;
     @Getter
     private ChatlogManager chatlogManager;
+    @Getter
+    private ClanManager clanManager;
+    @Getter
+    private FriendManager friendManager;
 
     @Getter
     private HermesServer restServer;
@@ -93,27 +101,6 @@ public class IO {
 
         // initialize rest api
         restServer = HermesServerFactory.create(new Config());
-    }
-
-    private static class Config extends HermesConfig {
-
-        public Config() {
-
-            Header generalHeader = IO.getInstance().getIrisConfig().getHeader("general");
-
-            Key hostKey = generalHeader.getKey("host");
-
-            host(hostKey.getValue(0).asString());
-            port(hostKey.getValue(1).asInt());
-            backLog(25);
-
-            corePoolSize(8);
-            maxPoolSize(16);
-
-            filter(AuthenticationFilter.class);
-            register(PlayerResource.class);
-            register(ChatlogResource.class);
-        }
     }
 
     /**
@@ -157,6 +144,10 @@ public class IO {
         playerManager.createTables();
         chatlogManager = new ChatlogManager(athena, pubSubCache, expire);
         chatlogManager.createTables();
+        clanManager = new ClanManager(athena, pubSubCache, expire);
+        clanManager.createTables();
+        friendManager = new FriendManager(athena, pubSubCache, expire);
+        friendManager.createTables();
 
         // start rest api
         restServer.start();
@@ -164,6 +155,29 @@ public class IO {
         logger.debug("Hermes(rest server) started");
 
         logger.info("IO started - took {}s to start", (System.currentTimeMillis() - startTimeMillis) / 1000);
+    }
+
+    private static class Config extends HermesConfig {
+
+        public Config() {
+
+            Header generalHeader = IO.getInstance().getIrisConfig().getHeader("general");
+
+            Key hostKey = generalHeader.getKey("host");
+
+            host(hostKey.getValue(0).asString());
+            port(hostKey.getValue(1).asInt());
+            backLog(25);
+
+            corePoolSize(8);
+            maxPoolSize(16);
+
+            filter(AuthenticationFilter.class);
+            register(PlayerResource.class);
+            register(ChatlogResource.class);
+            register(ClanResource.class);
+            register(FriendResource.class);
+        }
     }
 
     /**

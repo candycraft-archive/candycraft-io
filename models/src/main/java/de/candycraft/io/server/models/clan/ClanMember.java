@@ -3,33 +3,29 @@ package de.candycraft.io.server.models.clan;
 import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
-import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by Paul
- * on 23.03.2019
+ * on 24.03.2019
  *
  * @author pauhull
  */
 @Builder(builderClassName = "Builder")
-public class Clan extends IOModel {
+public class ClanMember extends IOModel {
 
     @Getter
     private int id;
     @Getter
-    private String fullName;
+    private int clanId;
     @Getter
-    private String tag;
+    private int clanGroupId;
     @Getter
-    @Setter
-    private List<ClanMember> members;
+    private UUID uuid;
     @Getter
-    private double exp;
+    private String name;
     @Getter
-    private int level;
-    @Getter
-    private int createdAt;
+    private long joinedAt;
 
 }

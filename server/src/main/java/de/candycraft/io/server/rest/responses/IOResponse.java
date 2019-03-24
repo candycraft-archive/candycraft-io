@@ -61,7 +61,8 @@ public class IOResponse {
     public enum Source {
 
         MYSQL,
-        CACHE
+        CACHE,
+        MOJANG
     }
 
     /**
