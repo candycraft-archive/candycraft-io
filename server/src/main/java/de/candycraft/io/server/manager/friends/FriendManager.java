@@ -12,7 +12,6 @@ import de.progme.athena.query.core.CreateQuery;
 import de.progme.athena.query.core.InsertQuery;
 import de.progme.athena.query.core.SelectQuery;
 import de.progme.thor.client.cache.PubSubCache;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -80,20 +79,25 @@ public class FriendManager extends Manager {
 
     public IOResponse requestFriendship(UUID from, UUID to) {
 
-        String toName = IO.getInstance().getPlayerManager().getPlayer(to).getName();
+        JSONObject fromPlayer = IO.getInstance().getPlayerManager().getPlayer(from).toJSON();
+        JSONObject toPlayer = IO.getInstance().getPlayerManager().getPlayer(to).toJSON();
 
         String sql = "SELECT * FROM " + TABLE + " WHERE (`from`='" + from + "' AND `to`='" + to + "') OR (`from`='" + to + "' AND `to`='" + from + "')";
         DBResult result = athena.query(sql);
 
         if (result.size() > 0) {
+
             DBRow row = result.row(0);
+            JSONObject friendshipObject = Friendship.fromDBRow(row, Friendship.class).toJSON();
+            friendshipObject.put("toPlayer", toPlayer);
+            friendshipObject.put("fromPlayer", fromPlayer);
+
             if (row.get("accepted")) {
 
                 return new IOResponse.Builder()
-                        .status(IOResponse.Status.ERROR)
+                        .status("FRIEND_ALREADY_ADDED")
                         .source(IOResponse.Source.MYSQL)
-                        .time(System.currentTimeMillis())
-                        .message("&cDu bist bereits mit " + toName + " befreundet.")
+                        .message(friendshipObject)
                         .build();
 
             } else {
@@ -106,10 +110,9 @@ public class FriendManager extends Manager {
                 } else {
 
                     return new IOResponse.Builder()
-                            .status(IOResponse.Status.ERROR)
+                            .status("REQUEST_ALREADY_SENT")
                             .source(IOResponse.Source.MYSQL)
-                            .time(System.currentTimeMillis())
-                            .message("&cDu hast &f" + toName + "&c bereits eine Freundschaftsanfrage gesendet.")
+                            .message(friendshipObject)
                             .build();
                 }
             }
@@ -124,59 +127,56 @@ public class FriendManager extends Manager {
                 .column("accepted").value("false")
                 .build();
 
-        System.out.println(query.sql());
-
         athena.execute(query);
+
+        result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + from + "' AND `to`='" + to + "'");
+        JSONObject friendshipObject = Friendship.fromDBRow(result.row(0), Friendship.class).toJSON();
+        friendshipObject.put("toPlayer", toPlayer);
+        friendshipObject.put("fromPlayer", fromPlayer);
 
         return new IOResponse.Builder()
                 .source(IOResponse.Source.MYSQL)
-                .time(System.currentTimeMillis())
-                .status(IOResponse.Status.OK)
-                .message("&aDu hast &f" + toName + "&a eine Freundschaftsanfrage gesendet.")
+                .status("REQUEST_SENT_SUCCESSFULLY")
+                .message(friendshipObject)
                 .build();
     }
 
     public IOResponse acceptRequest(UUID from, UUID to) {
 
-        String fromName = IO.getInstance().getPlayerManager().getPlayer(from).getName();
-        String toName = IO.getInstance().getPlayerManager().getPlayer(to).getName();
+        JSONObject toPlayer = IO.getInstance().getPlayerManager().getPlayer(to).toJSON();
+        JSONObject fromPlayer = IO.getInstance().getPlayerManager().getPlayer(from).toJSON();
 
         DBResult result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + from + "' AND `to`='" + to + "'");
 
-        if (result.size() < 1) {
-
-            JSONObject responseObject = new JSONObject("{\"status\": \"no-request\", \"message\": \"&f" + toName + "&c hat dir keine Freundschaftsanfrage gesendet.\"}");
+        if (result.size() < 1) { // no request received
 
             return new IOResponse.Builder()
-                    .status(IOResponse.Status.ERROR)
+                    .status("NO_REQUEST_RECEIVED")
                     .source(IOResponse.Source.MYSQL)
-                    .message(responseObject)
                     .build();
         }
 
         DBRow row = result.row(0);
-        if (row.get("accepted")) {
+        JSONObject friendshipObject = Friendship.fromDBRow(row, Friendship.class).toJSON();
+        friendshipObject.put("toPlayer", toPlayer);
+        friendshipObject.put("fromPlayer", fromPlayer);
 
-            JSONObject responseObject = new JSONObject("{\"status\": \"already-accepted\", \"message\": \"&cDu hast die Freundschaftanfrage von &f" + fromName + "&c bereits angenommen.\"}");
+        if (row.get("accepted")) { // request already accepted
 
             return new IOResponse.Builder()
-                    .status(IOResponse.Status.ERROR)
+                    .status("REQUEST_ALREADY_ACCEPTED")
                     .source(IOResponse.Source.MYSQL)
-                    .message(responseObject)
+                    .message(friendshipObject)
                     .build();
         }
 
         athena.execute("UPDATE " + TABLE + " SET accepted=1 WHERE `from`='" + from + "' AND `to`='" + to + "'");
 
-        JSONObject responseObject = new JSONObject("{\"status\": \"accepted\", \"message\": \"&aDu hast die Freundschaftsanfrage von &f" + fromName + "&a angenommen.\"}");
-        JSONObject friendshipObject = Friendship.fromDBRow(row, Friendship.class).toJSON();
-
         return new IOResponse.Builder()
-                .status(IOResponse.Status.OK)
+                .status("REQUEST_SUCCESSFULLY_ACCEPTED")
                 .source(IOResponse.Source.MYSQL)
-                .message(new JSONArray(new JSONObject[]{responseObject, friendshipObject}))
+                .message(friendshipObject)
                 .build();
     }
-
 
 }
