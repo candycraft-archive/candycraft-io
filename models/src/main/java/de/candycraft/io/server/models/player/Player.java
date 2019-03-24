@@ -3,6 +3,7 @@ package de.candycraft.io.server.models.player;
 import de.candycraft.io.server.models.IOModel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import java.util.UUID;
 public class Player extends IOModel {
 
     @Getter
+    @Setter
     private int id;
     @Getter
     private UUID uuid;
