@@ -74,6 +74,14 @@ public class PlayerManager extends Manager {
         });
         this.athena.execute(builder.build());
 
+        DBResult result = athena.query(new SelectQuery.Builder()
+                .select("*")
+                .from(TABLE)
+                .where(new Condition("identifier", Condition.Operator.EQUAL, String.valueOf(player.getUuid())))
+                .limit(1)
+                .build());
+        player.setId(result.row(0).get("id"));
+
         this.cache.put(CACHE_PREFIX + player.getUuid(), playerJSON, expire);
         this.cache.put(CACHE_PREFIX + player.getName(), playerJSON, expire);
 
