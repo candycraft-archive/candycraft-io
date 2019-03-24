@@ -12,6 +12,8 @@ import de.progme.athena.query.core.CreateQuery;
 import de.progme.athena.query.core.InsertQuery;
 import de.progme.athena.query.core.SelectQuery;
 import de.progme.thor.client.cache.PubSubCache;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +46,10 @@ public class FriendManager extends Manager {
 
         athena.execute(new CreateQuery.Builder()
                 .create(TABLE)
-                .ifNotExists(true)
                 .primaryKey("id")
                 .value("id", "int", "auto_increment")
-                .value("from", "varchar(36)")
-                .value("to", "varchar(36)")
+                .value("`from`", "varchar(36)")
+                .value("`to`", "varchar(36)")
                 .value("time", "bigint")
                 .value("accepted", "bool")
                 .build());
@@ -59,8 +60,8 @@ public class FriendManager extends Manager {
         SelectQuery selectQuery = new SelectQuery.Builder()
                 .select("*")
                 .from(TABLE)
-                .where(new Condition("from", Condition.Operator.EQUAL, uuid.toString()))
-                .where(new Condition("to", Condition.Operator.EQUAL, uuid.toString()))
+                .where(new Condition("`from`", Condition.Operator.EQUAL, uuid.toString()))
+                .where(new Condition("`to`", Condition.Operator.EQUAL, uuid.toString()))
                 .build();
         DBResult result = athena.query(selectQuery);
 
@@ -79,11 +80,9 @@ public class FriendManager extends Manager {
 
     public IOResponse requestFriendship(UUID from, UUID to) {
 
-        String fromName = IO.getInstance().getPlayerManager().getPlayer(from).getName();
         String toName = IO.getInstance().getPlayerManager().getPlayer(to).getName();
 
-        String sql = "SELECT * FROM " + TABLE + " WHERE from='" + from + "' OR from='" + to + "' OR to='" + to + "' OR to='" + from + "'";
-        System.out.println(sql);
+        String sql = "SELECT * FROM " + TABLE + " WHERE (`from`='" + from + "' AND `to`='" + to + "') OR (`from`='" + to + "' AND `to`='" + from + "')";
         DBResult result = athena.query(sql);
 
         if (result.size() > 0) {
@@ -99,25 +98,35 @@ public class FriendManager extends Manager {
 
             } else {
 
-                return new IOResponse.Builder()
-                        .status(IOResponse.Status.ERROR)
-                        .source(IOResponse.Source.MYSQL)
-                        .time(System.currentTimeMillis())
-                        .message("&cDu hast &f" + toName + "&c bereits eine Freundschaftsanfrage gesendet.")
-                        .build();
+                result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + to + "' AND `to`='" + from + "'");
 
+                if (result.size() > 0) {
+
+                    return acceptRequest(to, from);
+                } else {
+
+                    return new IOResponse.Builder()
+                            .status(IOResponse.Status.ERROR)
+                            .source(IOResponse.Source.MYSQL)
+                            .time(System.currentTimeMillis())
+                            .message("&cDu hast &f" + toName + "&c bereits eine Freundschaftsanfrage gesendet.")
+                            .build();
+                }
             }
         }
 
         InsertQuery query = new InsertQuery.Builder()
                 .into(TABLE)
                 .column("id").value("0")
-                .column("from").value(from.toString())
-                .column("to").value(to.toString())
+                .column("`from`").value(from.toString())
+                .column("`to`").value(to.toString())
                 .column("time").value(Long.toString(System.currentTimeMillis()))
+                .column("accepted").value("false")
                 .build();
 
-        athena.query(query);
+        System.out.println(query.sql());
+
+        athena.execute(query);
 
         return new IOResponse.Builder()
                 .source(IOResponse.Source.MYSQL)
@@ -127,8 +136,46 @@ public class FriendManager extends Manager {
                 .build();
     }
 
-    public IOResponse acceptFriendship() {
-        return null;
+    public IOResponse acceptRequest(UUID from, UUID to) {
+
+        String fromName = IO.getInstance().getPlayerManager().getPlayer(from).getName();
+        String toName = IO.getInstance().getPlayerManager().getPlayer(to).getName();
+
+        DBResult result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + from + "' AND `to`='" + to + "'");
+
+        if (result.size() < 1) {
+
+            JSONObject responseObject = new JSONObject("{\"status\": \"no-request\", \"message\": \"&f" + toName + "&c hat dir keine Freundschaftsanfrage gesendet.\"}");
+
+            return new IOResponse.Builder()
+                    .status(IOResponse.Status.ERROR)
+                    .source(IOResponse.Source.MYSQL)
+                    .message(responseObject)
+                    .build();
+        }
+
+        DBRow row = result.row(0);
+        if (row.get("accepted")) {
+
+            JSONObject responseObject = new JSONObject("{\"status\": \"already-accepted\", \"message\": \"&cDu hast die Freundschaftanfrage von &f" + fromName + "&c bereits angenommen.\"}");
+
+            return new IOResponse.Builder()
+                    .status(IOResponse.Status.ERROR)
+                    .source(IOResponse.Source.MYSQL)
+                    .message(responseObject)
+                    .build();
+        }
+
+        athena.execute("UPDATE " + TABLE + " SET accepted=1 WHERE `from`='" + from + "' AND `to`='" + to + "'");
+
+        JSONObject responseObject = new JSONObject("{\"status\": \"accepted\", \"message\": \"&aDu hast die Freundschaftsanfrage von &f" + fromName + "&a angenommen.\"}");
+        JSONObject friendshipObject = Friendship.fromDBRow(row, Friendship.class).toJSON();
+
+        return new IOResponse.Builder()
+                .status(IOResponse.Status.OK)
+                .source(IOResponse.Source.MYSQL)
+                .message(new JSONArray(new JSONObject[]{responseObject, friendshipObject}))
+                .build();
     }
 
 

@@ -31,4 +31,14 @@ public class FriendResource {
         return Response.ok().content(response.toJSONString()).build();
     }
 
+    @GET
+    @Path("/accept/{from}/{to}")
+    @Produces(ContentType.APPLICATION_JSON)
+    public Response acceptRequest(Request httpRequest, @PathParam String from, @PathParam String to) {
+
+        IOResponse response = IO.getInstance().getFriendManager().acceptRequest(UUID.fromString(from), UUID.fromString(to));
+
+        return Response.ok().content(response.toJSONString()).build();
+    }
+
 }
