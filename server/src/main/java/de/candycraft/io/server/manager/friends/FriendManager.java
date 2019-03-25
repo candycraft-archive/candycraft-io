@@ -6,10 +6,7 @@ import de.candycraft.io.server.rest.responses.IOResponse;
 import de.progme.athena.Athena;
 import de.progme.athena.db.DBResult;
 import de.progme.athena.db.DBRow;
-import de.progme.athena.db.serialization.Condition;
 import de.progme.athena.query.core.CreateQuery;
-import de.progme.athena.query.core.InsertQuery;
-import de.progme.athena.query.core.SelectQuery;
 import de.progme.thor.client.cache.PubSubCache;
 
 import java.util.ArrayList;
@@ -54,13 +51,7 @@ public class FriendManager extends Manager {
 
     public IOResponse getFriendships(UUID uuid) {
 
-        SelectQuery selectQuery = new SelectQuery.Builder()
-                .select("*")
-                .from(TABLE)
-                .where(new Condition("`from`", Condition.Operator.EQUAL, uuid.toString()))
-                .where(new Condition("`to`", Condition.Operator.EQUAL, uuid.toString()))
-                .build();
-        DBResult result = athena.query(selectQuery);
+        DBResult result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + uuid + "' OR `to`='" + uuid + "'");
 
         List<Friendship> friendships = new ArrayList<>();
         result.rows().forEach(row -> {
@@ -70,8 +61,27 @@ public class FriendManager extends Manager {
         return new IOResponse.Builder()
                 .source(IOResponse.Source.MYSQL)
                 .status(IOResponse.Status.OK)
-                .time(System.currentTimeMillis())
                 .message(friendships)
+                .build();
+    }
+
+    public IOResponse getFriendship(UUID a, UUID b) {
+
+        DBResult result = athena.query("SELECT * FROM " + TABLE + " WHERE (`from`='" + a + "' AND `to`='" + b + "') OR (`from`='" + b + "' AND `to`='" + a + "')");
+
+        if (result.size() < 1) {
+            return new IOResponse.Builder()
+                    .status(IOResponse.Status.ERROR)
+                    .source(IOResponse.Source.MYSQL)
+                    .build();
+        }
+
+        Friendship friendship = Friendship.fromDBRow(result.row(0), Friendship.class);
+
+        return new IOResponse.Builder()
+                .status(IOResponse.Status.OK)
+                .source(IOResponse.Source.MYSQL)
+                .message(friendship)
                 .build();
     }
 
@@ -111,16 +121,7 @@ public class FriendManager extends Manager {
             }
         }
 
-        InsertQuery query = new InsertQuery.Builder()
-                .into(TABLE)
-                .column("id").value("0")
-                .column("`from`").value(from.toString())
-                .column("`to`").value(to.toString())
-                .column("time").value(Long.toString(System.currentTimeMillis()))
-                .column("accepted").value("false")
-                .build();
-
-        athena.execute(query);
+        this.athena.execute("INSERT INTO " + TABLE + " VALUES (0, '" + from + "', '" + to + "', " + System.currentTimeMillis() + ", 0)");
 
         result = athena.query("SELECT * FROM " + TABLE + " WHERE `from`='" + from + "' AND `to`='" + to + "'");
         Friendship friendship = Friendship.fromDBRow(result.row(0), Friendship.class);

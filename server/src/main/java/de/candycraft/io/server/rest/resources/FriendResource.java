@@ -41,4 +41,23 @@ public class FriendResource {
         return Response.ok().content(response.toJSONString()).build();
     }
 
+    @GET
+    @Path("/friendship/{a}/{b}")
+    @Produces(ContentType.APPLICATION_JSON)
+    public Response getFriendship(Request httpRequest, @PathParam String a, @PathParam String b) {
+
+        IOResponse response = IO.getInstance().getFriendManager().getFriendship(UUID.fromString(a), UUID.fromString(b));
+
+        return Response.ok().content(response.toJSONString()).build();
+    }
+
+    @GET
+    @Path("/friendships/{uuid}")
+    @Produces(ContentType.APPLICATION_JSON)
+    public Response getFriendships(Request httpRequest, @PathParam String uuid) {
+
+        IOResponse response = IO.getInstance().getFriendManager().getFriendships(UUID.fromString(uuid));
+
+        return Response.ok().content(response.toJSONString()).build();
+    }
 }
